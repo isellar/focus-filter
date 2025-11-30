@@ -1,0 +1,166 @@
+🔍 Problem Statement
+Modern smartphone users are overwhelmed by a constant stream of notifications from apps, services, and systems.
+These alerts vary drastically in importance and while some require immediate attention, many are low-value distractions or informational noise. In many cases a single application will have multiple categories of notification with no way to distinguish between them without the user reading and digesting the information themself.
+This overload negatively impacts productivity, focus, and mental clarity.
+
+The problem:
+There is no intelligent, personalized system that automatically interprets, filters, and acts on notifications based on a user’s priorities.
+
+Why it matters:
+
+The average person receives 40–100+ notifications per day.
+Most are irrelevant in the moment.
+Even tiny interruptions break workflow and attention cycles.
+Users need an automated agent that works as a cognitive shield, surfacing what matters now, storing what matters later and blocking what doesn't.
+Focus Filter addresses this gap by creating an autonomous system that routes notifications intelligently and reduces distraction.
+
+🤖 Why Agents?
+Agents are uniquely suited to solve this problem because they can:
+
+1. Perceive
+They ingest raw notifications, inspect content, and understand the underlying intent using natural-language reasoning.
+
+2. Decide
+Agents can classify each notification as urgent, irrelevant, or informational through multi-step reasoning, few-shot examples, and user preferences.
+
+3. Act
+Unlike a simple classifier, agents can:
+
+trigger tools,
+suppress output,
+store knowledge,
+summarize long-term patterns,
+and escalate emergencies.
+This ties directly into agentic loops:
+
+Get the Mission: The notification is the mission.
+Think It Through: The model reasons about urgency and context.
+Take Action: The agent passes, blocks, or stores it.
+Observe & Learn: Less urgent notifications enrich long-term memory and improve behavior over time.
+Agents provide both autonomy and adaptability, making them an ideal solution for personalized notification management.
+
+🏗️ What You Created — Architecture Overview
+┌───────────────────────────────┐
+│ Notification Stream (Simulated) │
+└───────────────┬───────────────┘
+│
+(Trigger / Mission)
+│
+┌───────────────▼────────────────┐
+│ Agent Orchestration Layer │
+│ - Context Engineering │
+│ - System Instructions │
+│ - Few-shot Classification │
+└───────────────┬────────────────┘
+│
+(Reasoning Step)
+│
+┌──────────────┼─────────────────────────┐
+│ │ │
+▼ ▼ ▼
+Pass Through Block Summarize + Store
+Urgent alerts Irrelevant noise Knowledge memories
+Action tools Safety filters Memory manager + vector DB
+│ │
+└─────────► Observability & Evaluation ◄┘
+
+Core components:
+Notification Ingestion Tool: Simulated pipeline for feeding alerts into the agent.
+LLM Reasoning Core: Classifies urgency using rules, examples, preferences, and context.
+Execution Tools:
+display_urgent_notification()
+block_notification()
+save_notification_memory()
+Memory Manager:
+extraction → consolidation → long-term storage
+Observability & Evaluations:
+traces, logs, LLM-as-judge, golden test suites
+The result is a Level-2 Strategic Problem-Solver with autonomous filtering, long-term learning, and safe decision boundaries.
+
+🎥 Demo — How Focus Filter Works
+Example scenario:
+
+Input Notification:
+“Your project deadline has moved to Tuesday.”
+
+The agent reasons:
+
+Is this urgent? Not immediate.
+Is it irrelevant? No.
+Should it be stored? Yes — meaningful, future-relevant detail.
+Action:
+
+Extracts key fact
+Updates memory store
+Nothing is shown to the user immediately
+Another example:
+
+Input Notification:
+“3 new people liked your photo.”
+
+The agent:
+
+Classifies as irrelevant social noise
+Blocks it without surfacing to the user
+Urgent example:
+
+Input Notification:
+“Your bank flagged suspicious activity on your account.”
+
+The agent:
+
+Recognizes high-priority context
+Calls urgent alert tool
+Immediately displays/highlights to user
+This demo flow shows the agent’s autonomy, reasoning, and tool-use loop.
+
+🛠️ The Build — Tools & Technologies Used
+OpenAI Agent Developer Kit (ADK) for orchestration
+LLM Reasoning Core (GPT-5 series) for classification, extraction, and planning
+Tooling Interfaces for:
+notification ingestion
+action execution
+memory writing
+Memory-as-a-Tool Framework
+Extraction
+Consolidation
+Deduplication
+Long-term storage with a vector database
+Observability Tools
+Tracing
+Logging
+AgentOps-style evaluation
+LLM-as-a-Judge for automated scoring of notification triage behavior
+Simulation Framework to mock real device notification streams
+Together, these components create a robust, testable, agentic pipeline.
+
+⏳ If I Had More Time, I Would…
+1. Add Personalization Loops
+Teach the agent user preferences automatically, such as:
+
+“Always notify me about finance alerts.”
+“Never block messages from family.”
+“Summaries only after work hours.”
+2. Integrate Real Device Notifications
+Move beyond simulated input to:
+
+Android notification listeners
+iOS push-forwarding via app extension
+3. Build a Dashboard
+Provide:
+
+Daily summaries
+Memory graph visualization
+Notification breakdown analytics
+4. Add Multi-Agent Coordination
+Separate agents for:
+
+Priority detection
+Memory optimization
+Safety filtering
+User preference tuning
+5. Develop Real-Time Evaluation
+Allow the system to self-correct using reinforcement signals (thumbs up/down).
+
+6. Integrate with other Tools
+Allow the system to handle notifications automatically using tools like calendars, email/sms sending, and home automation

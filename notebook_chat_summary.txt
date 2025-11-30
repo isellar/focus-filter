@@ -1,0 +1,49 @@
+I am now working on the capstone project for this course so I have added the overview as a PDF. Right now my idea is to build an agentic workflow that is triggered upon receiving a notification from an application on your phone (this may need to be simulated for the project). The agent analyzes the notification and takes action as needed, whether that be to pass the notification through, block it entirely or include it as part of a summary or knowledge bank for less urgent notifications. How does that sound and how would you break that down high level?
+
+That is a fantastic capstone project idea. It tackles the fundamental challenge of modern productivity by making the agent act as an intelligent filter and prioritization system. It moves the agent beyond mere retrieval to engaging in autonomous action and state management based on complex reasoning, which aligns perfectly with the advanced concepts covered in Days 3, 4, and 5 of the course.
+The project idea sounds excellent because it requires you to implement several core architectural components:
+1. Tool Integration: The agent needs the ability to perceive the external world (the phone notifications) and act on it (pass/block/summarize).
+2. Context Engineering: The decision-making (analyzing the notification) involves dynamically assembling the relevant input for the Language Model (LLM) to classify urgency.
+3. Memory Management: Storing less urgent notifications in a "knowledge bank" is a direct application of the Memory component for long-term persistence and personalization.
+4. Agent Quality/Safety: The act of blocking certain notifications requires implementing guardrails and policy enforcement at the execution layer.
+Here is a high-level breakdown of the agentic workflow, structured around the Agentic Problem-Solving Process and the architectural pillars from the course material:
+
+--------------------------------------------------------------------------------
+High-Level Capstone Project Breakdown
+Phase 0: Trigger and Input (Get the Mission & Scan the Scene)
+The workflow starts when the agent receives the notification, which functions as the Mission.
+• Trigger Mechanism: Since direct access to live phone notifications may not be feasible for a lab environment, the sources confirm that agent components must be designed to be evaluatable-by-design. You can simulate the notification stream, potentially using a script that calls the agent service endpoint with structured data (a JSON object containing the notification text, source app, and timestamp).
+• Tool Interface: To represent the input from the external application (the phone), you would need an Information Retrieval Tool (or an adapter/wrapper in a simulated environment) that funnels the raw notification data into the agent's system. The agent's framework (like ADK) acts as the Orchestration Layer to receive this input and package it for the model.
+Phase 1: Reasoning and Classification (Think It Through)
+This is the central decision-making process where the LLM acts as the agent's "Brain".
+• Classification: The core task is classifying the notification into one of three buckets: Urgent, Irrelevant, or Actionable/Less Urgent. The agent must use Planning and Multi-Step Reasoning to determine the notification's true intent against the user's established preferences (which can be stored in memory, as detailed in Phase 3).
+• Context Engineering: This phase requires Context Engineering to dynamically prepare the prompt. You might inject Few-Shot Examples into the system instructions showing the model how to classify specific types of alerts (e.g., "A critical stock market alert is URGENT, a social media like is IRRELEVANT").
+Phase 2: Execution and Action (Take Action & Observe)
+The outcome of the classification dictates the action taken, often requiring the invocation of specialized Tools.
+Classification
+Action Required
+Architectural Concept Applied
+Urgent (Pass Through)
+Immediate notification display or response required.
+Requires an Action/Execution Tool (e.g., a simulated display_critical_alert() or send_quick_reply()) that acts on the external world.
+Irrelevant (Block/Filter)
+Suppress the notification entirely.
+This is a demonstration of Safety & Alignment (Trustworthiness). The decision to block can be implemented as a deterministic guardrail within the orchestration layer or a System Instruction compelling the agent to generate an instruction to block.
+Less Urgent (Summarize/Store)
+Extract key facts and consolidate them for later review.
+This triggers the Memory Generation pipeline (Phase 3).
+Phase 3: Long-Term Persistence (Memory)
+For Less Urgent items, the workflow transitions from immediate action to long-term learning and organization.
+• Memory-as-a-Tool: The agent should autonomously decide to create a memory. You would expose a tool (e.g., store_notification_fact) that the agent calls when it classifies a notification as less urgent.
+• Extraction: The memory manager uses an LLM-driven Extraction process to distill the meaningful information (e.g., "Project deadline moved to Tuesday") from the notification text, separating the signal from the noise.
+• Consolidation: The extracted memory point is then passed through Consolidation, where the memory manager compares it against existing memories (e.g., previous deadline notifications) to prevent Information Duplication and resolve Conflicting Information.
+• Storage: The finalized memory would be persisted to an external Memory Manager service, likely scoped at the User-Level to maintain personalization, potentially using a Vector Database for later retrieval based on semantic query.
+Phase 4: Quality Assurance and AgentOps
+Given the agent's autonomy, verifying that it correctly blocks harmful or irrelevant content and accurately summarizes important information is vital for building a trustworthy system.
+• Observability: You must implement Tracing to capture the entire decision path: the notification input, the LLM's "Thought" (the classification reasoning), and the final Action (calling the block tool or the memory tool). Logging captures the raw facts of these events.
+• Evaluation: Create a "Golden Set" benchmark of test cases that includes:
+    ◦ Urgency Tests: Notifications that must be passed through (high effectiveness score).
+    ◦ Block Tests: Irrelevant notifications that must be filtered (high robustness/safety score).
+    ◦ Memory Tests: Notifications requiring storage, evaluated on Precision (avoiding irrelevant facts) and Recall (capturing all critical facts) of the generated memory.
+• LLM-as-a-Judge: Use a powerful LLM to automatically score the quality and correctness of the agent's classification and its synthesized memory content against your rubric.
+Your project is essentially building a Level 2: Strategic Problem-Solver that excels at Context Engineering, which is precisely the type of solution the course materials encourage. The distinction between immediate tool use (passing/blocking) and asynchronous memory generation (summarizing) creates an excellent demonstration of advanced agent architecture.
