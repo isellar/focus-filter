@@ -10,7 +10,36 @@ This guide will help you run your Kaggle notebook environment locally using Dock
 
 ## Quick Start
 
-### Option 1: Using Docker Compose (Recommended)
+### Option 0: Using Dev Container (Most Seamless - VS Code/Cursor)
+
+This is the **recommended** option for the best development experience in VS Code or Cursor.
+
+1. **Set up your `.env` file** (if not already done):
+   ```env
+   KAGGLE_USERNAME=your_kaggle_username
+   KAGGLE_KEY=your_kaggle_api_key
+   GOOGLE_API_KEY=your_google_api_key
+   ```
+
+2. **Open in Dev Container:**
+   - In VS Code/Cursor: Press `F1` or `Ctrl+Shift+P`
+   - Type "Dev Containers: Reopen in Container"
+   - Select it and wait for the container to build/start
+
+3. **You're ready!**
+   - The container will start automatically
+   - Jupyter Lab will be available at http://localhost:8888
+   - All Python extensions are pre-configured
+   - Your workspace is mounted and ready to use
+
+**Benefits:**
+- ✅ Seamless integration with VS Code/Cursor
+- ✅ Automatic Python environment setup
+- ✅ Pre-installed Jupyter extensions
+- ✅ Port forwarding configured automatically
+- ✅ Terminal access to the container environment
+
+### Option 1: Using Docker Compose (Recommended for CLI)
 
 1. **Set up your Kaggle credentials:**
    ```powershell
