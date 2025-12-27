@@ -1,0 +1,52 @@
+{
+  "name": "Focus Filter Backend",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "backend",
+  "workspaceFolder": "/workspace",
+  
+  // Features to add to the dev container
+  "features": {},
+  
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.pylint"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length", "100"],
+        "editor.formatOnSave": true,
+        "files.watcherExclude": {
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/__pycache__/**": true,
+          "**/.pytest_cache/**": true
+        }
+      }
+    }
+  },
+  
+  // Forward ports from the container
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI",
+      "onAutoForward": "notify"
+    }
+  },
+  
+  // Run after container is created
+  "postCreateCommand": "pip install -r requirements.txt",
+  
+  // Keep container running
+  "overrideCommand": false
+}
+

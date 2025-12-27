@@ -41,3 +41,17 @@ Thumbs.db
 *.db
 *.sqlite
 
+# Backend specific
+backend/.env
+backend/*.db
+backend/*.sqlite
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.venv/
+backend/venv/
+
+# DevContainers (keep config, ignore user-specific)
+.devcontainer/.env
+
