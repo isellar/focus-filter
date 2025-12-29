@@ -7,7 +7,7 @@ import com.focusfilter.models.Notification
 import com.focusfilter.models.NotificationCategory
 import com.focusfilter.models.UserContext
 import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.generativeModel
+//import com.google.ai.client.generativeai.generativeModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,16 +38,8 @@ class OnDeviceReasoningEngine @Inject constructor(
             // Check if AICore is available
             // Note: This is a placeholder - actual AICore availability check
             // may require different API calls depending on the SDK version
-            isAICoreAvailable = try {
-                // Try to initialize GenerativeModel
-                generativeModel = generativeModel {
-                    model = "gemini-nano"
-                }
-                true
-            } catch (e: Exception) {
-                Log.w(tag, "AICore not available: ${e.message}")
-                false
-            }
+            isAICoreAvailable = false // Assume not available until properly implemented
+            Log.w(tag, "AICore availability check is not implemented. Defaulting to unavailable.")
         } catch (e: Exception) {
             Log.e(tag, "Error checking AICore availability", e)
             isAICoreAvailable = false
@@ -75,14 +67,16 @@ class OnDeviceReasoningEngine @Inject constructor(
         notification: Notification,
         context: UserContext
     ): ClassificationResult {
+        // This is a placeholder and will not be called until AICore is available
+        Log.d(tag, "Classifying with AICore...")
         val prompt = buildPrompt(notification, context)
 
         return try {
-            val model = generativeModel ?: throw IllegalStateException("Model not initialized")
-            val response = model.generateContent(prompt)
-            val text = response.text ?: throw IllegalStateException("Empty response from model")
-
-            parseClassificationResponse(notification.id, text)
+            // val model = generativeModel ?: throw IllegalStateException("Model not initialized")
+            // val response = model.generateContent(prompt)
+            // val text = response.text ?: throw IllegalStateException("Empty response from model")
+            // parseClassificationResponse(notification.id, text)
+            throw NotImplementedError("AICore classification is not yet implemented.")
         } catch (e: Exception) {
             Log.e(tag, "Error classifying with AICore", e)
             // Fallback to backend

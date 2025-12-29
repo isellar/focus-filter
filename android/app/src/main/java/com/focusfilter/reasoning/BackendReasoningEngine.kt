@@ -5,6 +5,7 @@ import com.focusfilter.models.Notification
 import com.focusfilter.models.NotificationCategory
 import com.focusfilter.models.UserContext
 import com.focusfilter.data.api.BackendApiService
+import com.focusfilter.data.api.ClassificationRequest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +22,7 @@ class BackendReasoningEngine @Inject constructor(
         context: UserContext
     ): ClassificationResult {
         return try {
-            val request = com.focusfilter.data.api.ClassificationRequest(
+            val request = ClassificationRequest(
                 title = notification.title,
                 body = notification.body,
                 app_name = notification.appName,
@@ -30,7 +31,8 @@ class BackendReasoningEngine @Inject constructor(
                 extras = notification.extras
             )
 
-            val response = apiService.classify(request)
+            // Pass a placeholder API key
+            val response = apiService.classify("", request)
 
             ClassificationResult(
                 notificationId = response.notification_id,

@@ -5,7 +5,7 @@ import com.focusfilter.models.ActivityType
 import com.focusfilter.models.LocationContext
 import com.focusfilter.models.WeatherContext
 import com.google.android.gms.awareness.Awareness
-import com.google.android.gms.awareness.state.Weather
+//import com.google.android.gms.awareness.state.Weather
 import com.google.android.gms.location.ActivityRecognition
 import com.google.android.gms.location.ActivityRecognitionResult
 import com.google.android.gms.location.DetectedActivity
@@ -31,18 +31,17 @@ class AwarenessContextProvider @Inject constructor(
      */
     suspend fun getCurrentActivity(): ActivityType? = withContext(Dispatchers.IO) {
         try {
-            val awarenessClient = Awareness.getSnapshotClient(context)
-            val activityResult = Tasks.await(
-                ActivityRecognition.getClient(context).requestActivityUpdates(
-                    0L,
-                    com.google.android.gms.location.ActivityTransitionRequest(
-                        listOf()
-                    )
-                )
-            )
-
             // This is simplified - actual implementation would use ActivityRecognition API
             // For now, return null (will be implemented with proper API calls)
+            // val awarenessClient = Awareness.getSnapshotClient(context)
+            // val activityResult = Tasks.await(
+            //     ActivityRecognition.getClient(context).requestActivityUpdates(
+            //         0L,
+            //         com.google.android.gms.location.ActivityTransitionRequest(
+            //             listOf()
+            //         )
+            //     )
+            // )
             null
         } catch (e: Exception) {
             Log.e(tag, "Error getting activity", e)
@@ -55,18 +54,20 @@ class AwarenessContextProvider @Inject constructor(
      */
     suspend fun getWeatherContext(): WeatherContext? = withContext(Dispatchers.IO) {
         try {
-            val awarenessClient = Awareness.getSnapshotClient(context)
-            val weatherResult = Tasks.await(awarenessClient.weather)
+            // Weather API is deprecated, this needs to be replaced with a different weather provider
+            // val awarenessClient = Awareness.getSnapshotClient(context)
+            // val weatherResult = Tasks.await(awarenessClient.weather)
 
-            val weather = weatherResult.snapshot?.weather
-            if (weather != null) {
-                WeatherContext(
-                    condition = getWeatherCondition(weather),
-                    temperature = weather.temperature?.celsius
-                )
-            } else {
-                null
-            }
+            // val weather = weatherResult.snapshot?.weather
+            // if (weather != null) {
+            //     WeatherContext(
+            //         condition = getWeatherCondition(weather),
+            //         temperature = weather.temperature?.celsius
+            //     )
+            // } else {
+            //     null
+            // }
+            null
         } catch (e: Exception) {
             Log.e(tag, "Error getting weather", e)
             null
@@ -87,6 +88,7 @@ class AwarenessContextProvider @Inject constructor(
         }
     }
 
+    /*
     private fun getWeatherCondition(weather: Weather): String {
         return when {
             weather.conditions.contains(Weather.CONDITION_RAINY) -> "raining"
@@ -96,4 +98,5 @@ class AwarenessContextProvider @Inject constructor(
             else -> "unknown"
         }
     }
+    */
 }
