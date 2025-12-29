@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Focus Filter</string>
+    
+    <!-- Main Activity -->
+    <string name="enable_notification_access">Enable Notification Access</string>
+    <string name="notification_access_required">Notification access is required for Focus Filter to work.</string>
+    <string name="service_status">Service Status</string>
+    <string name="service_running">Running</string>
+    <string name="service_stopped">Stopped</string>
+    
+    <!-- Agent Summary -->
+    <string name="agent_summary_title">Focus Filter Agent Summary</string>
+    <string name="agent_summary_silenced">Silenced %d notifications</string>
+    <string name="agent_summary_highlighted">Highlighted %d urgent notifications</string>
+    <string name="agent_summary_stored">Stored %d less urgent notifications</string>
+    
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="reasoning_mode">Reasoning Mode</string>
+    <string name="reasoning_mode_on_device">On-Device Only</string>
+    <string name="reasoning_mode_fallback">Cloud Fallback Enabled</string>
+    <string name="reasoning_mode_cloud">Cloud Only</string>
+    
+    <!-- Context Providers -->
+    <string name="context_providers">Context Providers</string>
+    <string name="awareness_api">Awareness API</string>
+    <string name="health_connect">Health Connect</string>
+    <string name="calendar">Calendar</string>
+    
+    <!-- Backend API -->
+    <string name="backend_api">Backend API</string>
+    <string name="api_endpoint">API Endpoint</string>
+    <string name="api_key">API Key</string>
+    
+    <!-- Classification -->
+    <string name="urgent">Urgent</string>
+    <string name="irrelevant">Irrelevant</string>
+    <string name="less_urgent">Less Urgent</string>
+</resources>

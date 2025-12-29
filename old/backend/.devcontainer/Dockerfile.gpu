@@ -1,0 +1,24 @@
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+# Install Python 3.11 and system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symlink for python
+RUN ln -s /usr/bin/python3.11 /usr/bin/python && \
+    ln -s /usr/bin/python3.11 /usr/bin/python3
+
+WORKDIR /workspace
+
+# Set Python to unbuffered mode for better logging
+ENV PYTHONUNBUFFERED=1
+
+# Python dependencies will be installed via postCreateCommand
+# or manually: pip install -r requirements.txt
+

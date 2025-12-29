@@ -1,0 +1,175 @@
+# Focus Filter - Implementation Plan
+
+## Project Overview
+Build an intelligent notification filtering agent that classifies notifications as urgent, irrelevant, or less urgent, then takes appropriate action (pass through, block, or store in memory).
+
+## Contest Requirements
+Must demonstrate at least 3 of the following key concepts:
+- Multi-agent system (LLM-powered, parallel, sequential, loop agents)
+- Tools (MCP, custom tools, built-in tools, OpenAPI tools)
+- Long-running operations (pause/resume agents)
+- Sessions & Memory (state management, long-term memory, context engineering)
+- Observability (logging, tracing, metrics)
+- Agent evaluation
+- A2A Protocol
+- Agent deployment
+
+## Selected Concepts to Demonstrate
+1. **Multi-agent system**: Sequential agents (classification → action → memory)
+2. **Tools**: Custom tools for notification handling (display, block, store)
+3. **Sessions & Memory**: Long-term memory for storing less urgent notifications
+4. **Observability**: Logging and tracing for decision paths
+5. **Agent evaluation**: LLM-as-judge evaluation of classification accuracy
+
+## Implementation Steps
+
+### Step 1: Create Runnable Submission Notebook (submission.ipynb)
+**Goal**: Create a minimal working version that can run in local Docker Kaggle image
+
+**Components**:
+- Environment setup (imports, API keys configuration)
+- Notification simulation tool (generates test notifications)
+- Basic agent with classification capability
+- Simple action tools (display_urgent, block_notification, save_to_memory)
+- Basic execution loop
+- Test with sample notifications
+
+**Deliverable**: A runnable notebook that processes at least 3-5 sample notifications
+
+---
+
+### Step 2: Implement Multi-Agent Architecture
+**Goal**: Refactor into sequential agent system
+
+**Components**:
+- **Classification Agent**: Analyzes notification and determines urgency
+- **Action Agent**: Executes appropriate action based on classification
+- **Memory Agent**: Handles extraction, consolidation, and storage of less urgent notifications
+- Agent orchestration layer to coordinate between agents
+
+**Deliverable**: Sequential agent pipeline with clear separation of concerns
+
+---
+
+### Step 3: Enhance Tools and Tool Integration
+**Goal**: Build robust custom tools for notification management
+
+**Components**:
+- `display_urgent_notification()`: Shows critical alerts to user
+- `block_notification()`: Suppresses irrelevant notifications
+- `save_notification_memory()`: Stores notification facts
+- `retrieve_user_preferences()`: Retrieves user preferences from memory
+- Tool validation and error handling
+
+**Deliverable**: Complete tool suite with proper error handling
+
+---
+
+### Step 4: Implement Memory Management
+**Goal**: Long-term memory for storing and retrieving notification patterns
+
+**Components**:
+- Memory extraction: Extract key facts from notifications
+- Memory consolidation: Deduplicate and merge related memories
+- Vector database integration for semantic search
+- User preference learning from stored memories
+- Context compaction for efficient memory retrieval
+
+**Deliverable**: Functional memory system that stores and retrieves notification facts
+
+---
+
+### Step 5: Add Observability
+**Goal**: Comprehensive logging, tracing, and metrics
+
+**Components**:
+- Trace capture for agent decision paths
+- Structured logging for all agent actions
+- Metrics collection (classification accuracy, action distribution)
+- Visualization of agent reasoning traces
+- Performance monitoring
+
+**Deliverable**: Full observability stack with traces and logs
+
+---
+
+### Step 6: Implement Agent Evaluation
+**Goal**: Automated evaluation of agent performance
+
+**Components**:
+- Golden test suite with labeled notifications
+- LLM-as-judge evaluation framework
+- Evaluation metrics:
+  - Classification accuracy (urgent vs irrelevant vs less urgent)
+  - Action correctness
+  - Memory extraction quality (precision/recall)
+- Automated scoring and reporting
+
+**Deliverable**: Evaluation framework with test suite and automated scoring
+
+---
+
+### Step 7: Enhance Context Engineering
+**Goal**: Optimize prompts and context management
+
+**Components**:
+- Few-shot examples for classification
+- Dynamic context assembly based on notification type
+- User preference injection into context
+- Context compaction for long conversations
+- System instructions optimization
+
+**Deliverable**: Optimized context engineering with few-shot learning
+
+---
+
+### Step 8: Add Advanced Features (Optional)
+**Goal**: Additional features for bonus points
+
+**Components**:
+- Personalization loops (learn from user feedback)
+- Multi-agent coordination (parallel processing for batch notifications)
+- A2A Protocol implementation (if applicable)
+- Deployment configuration
+- Dashboard/visualization of agent decisions
+
+**Deliverable**: Enhanced features demonstrating advanced concepts
+
+---
+
+### Step 9: Documentation and Writeup
+**Goal**: Prepare submission materials
+
+**Components**:
+- Project writeup explaining value proposition
+- Architecture documentation
+- Demo scenarios and results
+- Evaluation results and metrics
+- Code comments and docstrings
+
+**Deliverable**: Complete submission package
+
+---
+
+## Technical Stack
+- OpenAI Agent Developer Kit (ADK) or similar framework
+- LLM: GPT-4 or GPT-5 series
+- Vector Database: For memory storage (e.g., Chroma, Pinecone, or in-memory)
+- Observability: Built-in tracing/logging or AgentOps-style tools
+- Evaluation: LLM-as-judge with evaluation framework
+
+## Testing Strategy
+1. Unit tests for individual tools
+2. Integration tests for agent workflows
+3. Golden test suite for evaluation
+4. Manual testing with diverse notification types
+5. Performance testing for scalability
+
+## Success Criteria
+- ✅ Runnable notebook that processes notifications
+- ✅ Demonstrates at least 3 required concepts
+- ✅ Clear value proposition (reduces notification overload)
+- ✅ Observable and evaluable system
+- ✅ Well-documented code
+- ✅ Submission ready by Dec 1, 2025
+
