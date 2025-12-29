@@ -9,10 +9,15 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.focusfilter.R
+import com.focusfilter.data.NotificationRepository
 import com.focusfilter.models.ClassificationResult
 import com.focusfilter.models.Notification
 import com.focusfilter.ui.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,10 +26,12 @@ import javax.inject.Singleton
  */
 @Singleton
 class FocusFilterNotificationManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val repository: NotificationRepository
 ) {
     private val tag = "NotificationManager"
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
         createNotificationChannels()
@@ -87,7 +94,7 @@ class FocusFilterNotificationManager @Inject constructor(
             .setAutoCancel(true)
 
         notificationManager.notify(notification.id.hashCode(), notificationBuilder.build())
-        Log.d(tag, "Promoted notification: ${notification.title}")
+        Log.d(tag, "Promoted notification: ${notification.title} with reasoning: ${classification.reasoning}")
     }
 
     /**
@@ -97,8 +104,10 @@ class FocusFilterNotificationManager @Inject constructor(
         notification: Notification,
         classification: ClassificationResult
     ) {
-        // Store in database for history
-        Log.d(tag, "Suppressed notification: ${notification.title}")
+        Log.d(tag, "Suppressed notification: ${notification.title} with reasoning: ${classification.reasoning}")
+        coroutineScope.launch {
+            repository.insertNotification(notification, classification)
+        }
     }
 
     /**
@@ -108,8 +117,10 @@ class FocusFilterNotificationManager @Inject constructor(
         notification: Notification,
         classification: ClassificationResult
     ) {
-        // Store in AppSearch for later review
-        Log.d(tag, "Stored notification: ${notification.title}")
+        Log.d(tag, "Stored notification: ${notification.title} with reasoning: ${classification.reasoning}")
+        coroutineScope.launch {
+            repository.insertNotification(notification, classification)
+        }
     }
 
     companion object {
