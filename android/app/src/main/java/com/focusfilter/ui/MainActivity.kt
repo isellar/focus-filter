@@ -1,10 +1,18 @@
 package com.focusfilter.ui
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,84 +23,202 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.focusfilter.data.room.NotificationEntity
 import com.focusfilter.R
+import com.focusfilter.data.ThemeSetting
+import com.focusfilter.ui.theme.FocusFilterTheme
+import com.focusfilter.ui.theme.LocalCustomColors
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
-            MainScreen()
+            val viewModel: MainViewModel = hiltViewModel()
+            val themeSetting by viewModel.themeSetting.collectAsState()
+            val useDarkTheme = when (themeSetting) {
+                ThemeSetting.SYSTEM -> isSystemInDarkTheme()
+                ThemeSetting.LIGHT -> false
+                ThemeSetting.DARK -> true
+            }
+
+            FocusFilterTheme(darkTheme = useDarkTheme) {
+                MainScreen(viewModel)
+            }
         }
     }
 }
 
 @Composable
-fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
+fun MainScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
-    var isServiceEnabled by remember { mutableStateOf(false) }
     val notifications by viewModel.notifications.collectAsState()
+    val isPassthroughEnabled by viewModel.isPassthroughEnabled.collectAsState()
 
-    // Check if notification access is enabled
-    LaunchedEffect(Unit) {
-        isServiceEnabled = isNotificationServiceEnabled(context)
+    var hasNotificationAccess by remember { mutableStateOf(false) }
+    var hasCalendarPermission by remember { mutableStateOf(false) }
+    var hasLocationPermission by remember { mutableStateOf(false) }
+    var hasPostNotificationPermission by remember { mutableStateOf(false) }
+
+    fun updatePermissionsState() {
+        hasNotificationAccess = isNotificationServiceEnabled(context)
+        hasCalendarPermission = context.hasPermission(Manifest.permission.READ_CALENDAR)
+        hasLocationPermission = context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            hasPostNotificationPermission = context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            hasPostNotificationPermission = true // Not needed for older versions
+        }
     }
 
-    MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+    val permissionsToRequest = remember { mutableStateListOf<String>() }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { updatePermissionsState() }
+    )
+
+    LaunchedEffect(Unit) {
+        updatePermissionsState()
+        if (!hasCalendarPermission) permissionsToRequest.add(Manifest.permission.READ_CALENDAR)
+        if (!hasLocationPermission) permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPostNotificationPermission) {
+            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (permissionsToRequest.isNotEmpty()) {
+            launcher.launch(permissionsToRequest.toTypedArray())
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Text(
+                text = "Focus Filter",
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (!hasNotificationAccess) {
+                NotificationAccessCard()
+            } else {
+                ServiceStatusCard(isPassthroughEnabled = isPassthroughEnabled)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Notification History",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Focus Filter",
-                    style = MaterialTheme.typography.headlineLarge
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (!isServiceEnabled) {
-                    NotificationAccessCard()
-                } else {
-                    ServiceStatusCard()
+                items(notifications) { notification ->
+                    NotificationHistoryItem(notification)
                 }
+            }
 
+            Button(
+                onClick = {
+                    val intent = Intent(context, SettingsActivity::class.java)
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Settings")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceStatusCard(isPassthroughEnabled: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Service Status",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            val statusText = if (isPassthroughEnabled) "Running (Passthrough)" else "Running (Filtering)"
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionsCheckCard(
+    hasCalendar: Boolean,
+    hasLocation: Boolean,
+    hasPost: Boolean,
+    onRequest: () -> Unit
+) {
+    val allPermissionsGranted = hasCalendar && hasLocation && hasPost
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (allPermissionsGranted) MaterialTheme.colorScheme.primaryContainer else LocalCustomColors.current.warningContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Permissions Status", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            PermissionStatus("Read Calendar", hasCalendar)
+            PermissionStatus("Access Location", hasLocation)
+            PermissionStatus("Post Notifications", hasPost)
+            if (!allPermissionsGranted) {
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Notification History",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(notifications) { notification ->
-                        NotificationHistoryItem(notification)
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        val intent = Intent(context, SettingsActivity::class.java)
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Settings")
+                Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
+                    Text("Grant Missing Permissions")
                 }
             }
         }
     }
 }
+@Composable
+private fun PermissionStatus(name: String, isGranted: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = name,
+            modifier = Modifier.weight(1f),
+            color = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        )
+        Text(
+            text = if (isGranted) "GRANTED" else "DENIED",
+            fontWeight = FontWeight.Bold,
+            color = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        )
+    }
+}
+
 
 @Composable
 private fun NotificationHistoryItem(notification: NotificationEntity) {
@@ -144,30 +270,8 @@ private fun NotificationAccessCard() {
     }
 }
 
-@Composable
-private fun ServiceStatusCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Service Status",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Running",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
+private fun Context.hasPermission(permission: String): Boolean {
+    return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 }
 
 

@@ -100,6 +100,9 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 
+    // JSON Serialization
+    implementation("com.google.code.gson:gson:2.10.1")
+
     // Retrofit (for backend API fallback)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")

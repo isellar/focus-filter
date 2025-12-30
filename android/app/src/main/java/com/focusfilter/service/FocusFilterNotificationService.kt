@@ -3,12 +3,14 @@ package com.focusfilter.service
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.focusfilter.data.SettingsRepository
 import com.focusfilter.models.Notification
 import com.focusfilter.processor.NotificationProcessor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +26,8 @@ class FocusFilterNotificationService : NotificationListenerService() {
 
     @Inject
     lateinit var notificationProcessor: NotificationProcessor
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     override fun onCreate() {
         super.onCreate()
@@ -53,11 +57,16 @@ class FocusFilterNotificationService : NotificationListenerService() {
         
         Log.d(tag, "Notification intercepted: ${notification.title} from ${notification.appName}")
 
-        // Cancel original notification to prevent duplicates
-        cancelNotification(sbn.key)
-
         // Process notification asynchronously
         serviceScope.launch {
+            // Check if passthrough is enabled. If so, do not cancel the original notification.
+            val isPassthroughEnabled = settingsRepository.passthroughEnabled.first()
+            if (!isPassthroughEnabled) {
+                cancelNotification(sbn.key)
+            } else {
+                Log.d(tag, "Passthrough enabled, not cancelling original notification.")
+            }
+
             try {
                 notificationProcessor.processNotification(notification)
             } catch (e: Exception) {
