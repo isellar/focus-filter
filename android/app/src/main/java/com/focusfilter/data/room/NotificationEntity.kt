@@ -2,11 +2,8 @@ package com.focusfilter.data.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.focusfilter.models.NotificationCategory
 
-/**
- * Represents a notification stored in the Room database.
- * This serves as a simpler, fallback storage solution compared to AppSearch.
- */
 @Entity(tableName = "notifications")
 data class NotificationEntity(
     @PrimaryKey(autoGenerate = true)
@@ -16,6 +13,8 @@ data class NotificationEntity(
     val appName: String,
     val packageName: String,
     val timestamp: Long,
-    val classification: String,
-    val reasoning: String? = null
+    val aiClassification: String,
+    val reasoning: String? = null,
+    var userClassification: String? = null,
+    var isActionable: Boolean = false
 )

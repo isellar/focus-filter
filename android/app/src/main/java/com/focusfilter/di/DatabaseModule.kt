@@ -22,7 +22,9 @@ object DatabaseModule {
             context.applicationContext,
             AppDatabase::class.java,
             "focus_filter_database"
-        ).build()
+        )
+        .fallbackToDestructiveMigration() // Recreates the DB on schema change
+        .build()
     }
 
     @Provides

@@ -36,10 +36,12 @@ class BackendReasoningEngine @Inject constructor(
 
             ClassificationResult(
                 notificationId = response.notification_id,
-                category = when (response.category) {
+                category = when (response.category.uppercase()) {
                     "URGENT" -> NotificationCategory.URGENT
+                    "INFORMATIONAL" -> NotificationCategory.INFORMATIONAL
+                    "BACKGROUND" -> NotificationCategory.BACKGROUND
                     "IRRELEVANT" -> NotificationCategory.IRRELEVANT
-                    else -> NotificationCategory.LESS_URGENT
+                    else -> NotificationCategory.BACKGROUND // Default safe category
                 },
                 confidence = response.confidence,
                 reasoning = response.reasoning
@@ -48,7 +50,7 @@ class BackendReasoningEngine @Inject constructor(
             // Fallback to simple classification
             ClassificationResult(
                 notificationId = notification.id,
-                category = NotificationCategory.LESS_URGENT,
+                category = NotificationCategory.BACKGROUND,
                 confidence = 0.5f,
                 reasoning = "Backend API error: ${e.message}"
             )

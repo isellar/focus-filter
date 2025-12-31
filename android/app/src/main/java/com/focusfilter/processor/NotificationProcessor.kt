@@ -40,26 +40,21 @@ class NotificationProcessor @Inject constructor(
 
             // Step 3: Execute action based on classification
             when (classification.category) {
-                NotificationCategory.URGENT -> {
-                    actionExecutor.executeUrgent(notification, classification)
-                }
-                NotificationCategory.IRRELEVANT -> {
-                    actionExecutor.executeIrrelevant(notification, classification)
-                }
-                NotificationCategory.LESS_URGENT -> {
-                    actionExecutor.executeLessUrgent(notification, classification)
-                }
+                NotificationCategory.URGENT -> actionExecutor.executeUrgent(notification, classification)
+                NotificationCategory.INFORMATIONAL -> actionExecutor.executeInformational(notification, classification)
+                NotificationCategory.BACKGROUND -> actionExecutor.executeBackground(notification, classification)
+                NotificationCategory.IRRELEVANT -> actionExecutor.executeIrrelevant(notification, classification)
             }
 
             Log.d(tag, "Notification processed successfully")
         } catch (e: Exception) {
             Log.e(tag, "Error processing notification", e)
-            // Fallback: treat as less urgent
-            actionExecutor.executeLessUrgent(
+            // Fallback: treat as background
+            actionExecutor.executeBackground(
                 notification,
                 com.focusfilter.models.ClassificationResult(
                     notificationId = notification.id,
-                    category = NotificationCategory.LESS_URGENT,
+                    category = NotificationCategory.BACKGROUND,
                     confidence = 0.5f,
                     reasoning = "Error: ${e.message}"
                 )

@@ -7,7 +7,6 @@ import com.focusfilter.models.Notification
 import com.focusfilter.models.NotificationCategory
 import com.focusfilter.models.UserContext
 import com.google.ai.client.generativeai.GenerativeModel
-//import com.google.ai.client.generativeai.generativeModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,20 +29,9 @@ class OnDeviceReasoningEngine @Inject constructor(
         checkAICoreAvailability()
     }
 
-    /**
-     * Checks if AICore (Gemini Nano) is available on this device.
-     */
     private fun checkAICoreAvailability() {
-        try {
-            // Check if AICore is available
-            // Note: This is a placeholder - actual AICore availability check
-            // may require different API calls depending on the SDK version
-            isAICoreAvailable = false // Assume not available until properly implemented
-            Log.w(tag, "AICore availability check is not implemented. Defaulting to unavailable.")
-        } catch (e: Exception) {
-            Log.e(tag, "Error checking AICore availability", e)
-            isAICoreAvailable = false
-        }
+        isAICoreAvailable = false // Placeholder
+        Log.w(tag, "AICore availability check is not implemented. Defaulting to unavailable.")
     }
 
     override suspend fun classify(
@@ -53,24 +41,17 @@ class OnDeviceReasoningEngine @Inject constructor(
         return if (isAICoreAvailable && generativeModel != null) {
             classifyWithAICore(notification, context)
         } else {
-            // Fallback to backend API
             Log.d(tag, "AICore unavailable, using backend fallback")
             backendFallback?.classify(notification, context)
                 ?: throw IllegalStateException("No reasoning engine available")
         }
     }
 
-    /**
-     * Classifies notification using Gemini Nano on-device.
-     */
     private suspend fun classifyWithAICore(
         notification: Notification,
         context: UserContext
     ): ClassificationResult {
-        // This is a placeholder and will not be called until AICore is available
-        Log.d(tag, "Classifying with AICore...")
         val prompt = buildPrompt(notification, context)
-
         return try {
             // val model = generativeModel ?: throw IllegalStateException("Model not initialized")
             // val response = model.generateContent(prompt)
@@ -79,20 +60,16 @@ class OnDeviceReasoningEngine @Inject constructor(
             throw NotImplementedError("AICore classification is not yet implemented.")
         } catch (e: Exception) {
             Log.e(tag, "Error classifying with AICore", e)
-            // Fallback to backend
             backendFallback?.classify(notification, context)
                 ?: ClassificationResult(
                     notificationId = notification.id,
-                    category = NotificationCategory.LESS_URGENT,
+                    category = NotificationCategory.BACKGROUND,
                     confidence = 0.5f,
                     reasoning = "Error: ${e.message}"
                 )
         }
     }
 
-    /**
-     * Builds the prompt for the reasoning engine.
-     */
     private fun buildPrompt(
         notification: Notification,
         context: UserContext
@@ -101,42 +78,37 @@ class OnDeviceReasoningEngine @Inject constructor(
             Given context:
             ${context.toPromptString()}
 
-            Should I alert the user about this notification:
+            Classify this notification:
             - Title: ${notification.title}
             - Body: ${notification.body}
             - App: ${notification.appName}
 
-            Classify as: URGENT, IRRELEVANT, or LESS_URGENT.
+            Classify as: URGENT, INFORMATIONAL, BACKGROUND, or IRRELEVANT.
             Provide confidence (0.0-1.0) and reasoning.
 
             Format your response as:
-            CATEGORY: [URGENT|IRRELEVANT|LESS_URGENT]
+            CATEGORY: [CATEGORY]
             CONFIDENCE: [0.0-1.0]
             REASONING: [explanation]
         """.trimIndent()
     }
 
-    /**
-     * Parses the classification response from the model.
-     */
     private fun parseClassificationResponse(
         notificationId: String,
         response: String
     ): ClassificationResult {
-        // Parse the response
-        // This is a simplified parser - you may want to use JSON or more structured parsing
         val category = when {
-            response.contains("URGENT", ignoreCase = true) -> NotificationCategory.URGENT
-            response.contains("IRRELEVANT", ignoreCase = true) -> NotificationCategory.IRRELEVANT
-            else -> NotificationCategory.LESS_URGENT
+            response.contains("URGENT", true) -> NotificationCategory.URGENT
+            response.contains("INFORMATIONAL", true) -> NotificationCategory.INFORMATIONAL
+            response.contains("BACKGROUND", true) -> NotificationCategory.BACKGROUND
+            else -> NotificationCategory.IRRELEVANT
         }
 
         val confidenceMatch = Regex("CONFIDENCE:\\s*([0-9.]+)").find(response)
         val confidence = confidenceMatch?.groupValues?.get(1)?.toFloatOrNull() ?: 0.7f
 
         val reasoningMatch = Regex("REASONING:\\s*(.+)", RegexOption.DOT_MATCHES_ALL).find(response)
-        val reasoning = reasoningMatch?.groupValues?.get(1)?.trim() 
-            ?: "Classified based on content analysis"
+        val reasoning = reasoningMatch?.groupValues?.get(1)?.trim() ?: "No reasoning provided."
 
         return ClassificationResult(
             notificationId = notificationId,

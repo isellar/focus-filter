@@ -3,7 +3,6 @@ package com.focusfilter.action
 import android.util.Log
 import com.focusfilter.models.ClassificationResult
 import com.focusfilter.models.Notification
-import com.focusfilter.models.NotificationCategory
 import dagger.hilt.android.scopes.ServiceScoped
 import javax.inject.Inject
 
@@ -17,39 +16,34 @@ class ActionExecutor @Inject constructor(
     private val tag = "ActionExecutor"
 
     /**
-     * Executes action for URGENT notifications.
      * Promotes notification with high priority.
      */
-    suspend fun executeUrgent(
-        notification: Notification,
-        classification: ClassificationResult
-    ) {
+    fun executeUrgent(notification: Notification, classification: ClassificationResult) {
         Log.d(tag, "Executing URGENT action for: ${notification.title}")
         notificationManager.promoteNotification(notification, classification)
     }
 
     /**
-     * Executes action for IRRELEVANT notifications.
-     * Suppresses notification (already cancelled).
+     * Stores notification for later review at an opportune time.
      */
-    suspend fun executeIrrelevant(
-        notification: Notification,
-        classification: ClassificationResult
-    ) {
-        Log.d(tag, "Executing IRRELEVANT action for: ${notification.title}")
-        // Notification already cancelled, just log
-        notificationManager.recordSuppressedNotification(notification, classification)
+    fun executeInformational(notification: Notification, classification: ClassificationResult) {
+        Log.d(tag, "Executing INFORMATIONAL action for: ${notification.title}")
+        notificationManager.storeNotification(notification, classification)
     }
 
     /**
-     * Executes action for LESS_URGENT notifications.
-     * Stores notification for later review.
+     * Stores notification for background context, does not surface to user.
      */
-    suspend fun executeLessUrgent(
-        notification: Notification,
-        classification: ClassificationResult
-    ) {
-        Log.d(tag, "Executing LESS_URGENT action for: ${notification.title}")
+    fun executeBackground(notification: Notification, classification: ClassificationResult) {
+        Log.d(tag, "Executing BACKGROUND action for: ${notification.title}")
         notificationManager.storeNotification(notification, classification)
+    }
+
+    /**
+     * Suppresses notification and records it.
+     */
+    fun executeIrrelevant(notification: Notification, classification: ClassificationResult) {
+        Log.d(tag, "Executing IRRELEVANT action for: ${notification.title}")
+        notificationManager.recordSuppressedNotification(notification, classification)
     }
 }
