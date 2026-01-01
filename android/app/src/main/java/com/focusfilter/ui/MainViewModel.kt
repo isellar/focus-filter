@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
-    settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val notifications: StateFlow<List<NotificationEntity>> = notificationRepository.getAllNotifications()
@@ -41,5 +41,9 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             notificationRepository.updateActionable(notificationId, isActionable)
         }
+    }
+
+    fun setPassthroughEnabled(isEnabled: Boolean) {
+        settingsRepository.setPassthroughEnabled(isEnabled)
     }
 }

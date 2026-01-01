@@ -16,6 +16,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,53 +62,33 @@ fun MainScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
     val notifications by viewModel.notifications.collectAsState()
     val isPassthroughEnabled by viewModel.isPassthroughEnabled.collectAsState()
-
     var hasNotificationAccess by remember { mutableStateOf(false) }
-    var hasCalendarPermission by remember { mutableStateOf(false) }
-    var hasLocationPermission by remember { mutableStateOf(false) }
-    var hasPostNotificationPermission by remember { mutableStateOf(false) }
 
-    fun updatePermissionsState() {
-        hasNotificationAccess = isNotificationServiceEnabled(context)
-        hasCalendarPermission = context.hasPermission(Manifest.permission.READ_CALENDAR)
-        hasLocationPermission = context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            hasPostNotificationPermission = context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            hasPostNotificationPermission = true // Not needed
-        }
-    }
-
-    val permissionsToRequest = remember { mutableStateListOf<String>() }
-    val launcher = rememberLauncherForActivityResult(
+    val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { updatePermissionsState() }
+        onResult = { /* State will be updated by LaunchedEffect */ }
     )
 
     LaunchedEffect(Unit) {
-        updatePermissionsState()
-        if (!hasCalendarPermission) permissionsToRequest.add(Manifest.permission.READ_CALENDAR)
-        if (!hasLocationPermission) permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPostNotificationPermission) {
-            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (permissionsToRequest.isNotEmpty()) {
-            launcher.launch(permissionsToRequest.toTypedArray())
-        }
+        hasNotificationAccess = isNotificationServiceEnabled(context)
+        // Request permissions if not granted
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp),
+            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("Focus Filter", style = MaterialTheme.typography.headlineLarge)
+            Text("Focus Filter", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 16.dp))
             Spacer(Modifier.height(16.dp))
 
             if (!hasNotificationAccess) {
                 NotificationAccessCard()
             } else {
-                ServiceStatusCard(isPassthroughEnabled = isPassthroughEnabled)
+                ServiceStatusCard(
+                    isPassthroughEnabled = isPassthroughEnabled,
+                    onToggle = { viewModel.setPassthroughEnabled(it) }
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -125,7 +110,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
             Button(
                 onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
             ) {
                 Text("Settings")
             }
@@ -133,7 +118,24 @@ fun MainScreen(viewModel: MainViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ServiceStatusCard(isPassthroughEnabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("Service Status", style = MaterialTheme.typography.titleMedium)
+                val statusText = if (isPassthroughEnabled) "Passthrough" else "Filtering"
+                Text(statusText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+            }
+            Switch(checked = !isPassthroughEnabled, onCheckedChange = { onToggle(!it) })
+        }
+    }
+}
+
 @Composable
 private fun NotificationHistoryItem(
     notification: NotificationEntity,
@@ -154,21 +156,33 @@ private fun NotificationHistoryItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Manual Classification Chips
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    NotificationCategory.values().forEach { category ->
-                        val isSelected = notification.userClassification == category.name
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onUpdateCategory(category) },
-                            label = { Text(category.name.first().toString()) }
-                        )
-                    }
+                // Manual Classification Icons
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    CategoryIconButton(
+                        category = NotificationCategory.URGENT,
+                        isSelected = notification.userClassification == NotificationCategory.URGENT.name,
+                        onClick = onUpdateCategory
+                    )
+                    CategoryIconButton(
+                        category = NotificationCategory.INFORMATIONAL,
+                        isSelected = notification.userClassification == NotificationCategory.INFORMATIONAL.name,
+                        onClick = onUpdateCategory
+                    )
+                    CategoryIconButton(
+                        category = NotificationCategory.BACKGROUND,
+                        isSelected = notification.userClassification == NotificationCategory.BACKGROUND.name,
+                        onClick = onUpdateCategory
+                    )
+                    CategoryIconButton(
+                        category = NotificationCategory.IRRELEVANT,
+                        isSelected = notification.userClassification == NotificationCategory.IRRELEVANT.name,
+                        onClick = onUpdateCategory
+                    )
                 }
                 // Actionable Toggle
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Actionable", style = MaterialTheme.typography.labelSmall)
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(4.dp))
                     Checkbox(checked = notification.isActionable, onCheckedChange = { onUpdateActionable(it) })
                 }
             }
@@ -177,17 +191,22 @@ private fun NotificationHistoryItem(
 }
 
 @Composable
-private fun ServiceStatusCard(isPassthroughEnabled: Boolean) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+private fun CategoryIconButton(
+    category: NotificationCategory,
+    isSelected: Boolean,
+    onClick: (NotificationCategory) -> Unit
+) {
+    val icon = when (category) {
+        NotificationCategory.URGENT -> Icons.Default.KeyboardDoubleArrowUp
+        NotificationCategory.INFORMATIONAL -> Icons.Default.ArrowUpward
+        NotificationCategory.BACKGROUND -> Icons.Default.ArrowDownward
+        NotificationCategory.IRRELEVANT -> Icons.Default.Block
+    }
+    IconToggleButton(
+        checked = isSelected,
+        onCheckedChange = { onClick(category) }
     ) {
-        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Service Status", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            val statusText = if (isPassthroughEnabled) "Running (Passthrough)" else "Running (Filtering)"
-            Text(statusText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-        }
+        Icon(imageVector = icon, contentDescription = category.name)
     }
 }
 
@@ -208,10 +227,6 @@ private fun NotificationAccessCard() {
             }
         }
     }
-}
-
-private fun Context.hasPermission(permission: String): Boolean {
-    return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 }
 
 private fun isNotificationServiceEnabled(context: Context): Boolean {
