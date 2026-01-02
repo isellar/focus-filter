@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.focusfilter.R
 import com.focusfilter.data.ThemeSetting
 import com.focusfilter.ui.theme.FocusFilterTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -52,62 +51,34 @@ class SettingsActivity : ComponentActivity() {
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val exportResult by viewModel.exportResult.collectAsState()
-    val isPassthroughEnabled by viewModel.passthroughEnabled.collectAsState()
     val apiEndpoint by viewModel.apiEndpoint.collectAsState()
     val themeSetting by viewModel.themeSetting.collectAsState()
 
-    // When the exportResult has a value, launch the share sheet.
     LaunchedEffect(exportResult) {
         exportResult?.let { json ->
             val file = saveJsonToFile(context, json)
             if (file != null) {
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    file
-                )
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
                 shareJson(context, uri)
             }
             viewModel.onExportConsumed()
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text("Settings", style = MaterialTheme.typography.headlineMedium)
             Divider()
 
-            // Theme settings
             ThemeSettingsSection(
                 currentSetting = themeSetting,
                 onSettingChanged = { viewModel.setThemeSetting(it) }
             )
             Divider()
-
-            // Passthrough setting
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Enable Passthrough Mode", style = MaterialTheme.typography.bodyLarge)
-                    Text("Don't suppress notifications; just record them.", style = MaterialTheme.typography.bodySmall)
-                }
-                Switch(checked = isPassthroughEnabled, onCheckedChange = { viewModel.setPassthroughEnabled(it) })
-            }
-            Divider()
-
-            // API Endpoint setting
+            
             Column {
                 Text("API Endpoint", style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
@@ -121,8 +92,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text("For development, use http://10.0.2.2:8000/", style = MaterialTheme.typography.bodySmall)
             }
             Divider()
-
-            // Export setting
+            
             Column {
                 Button(onClick = { viewModel.exportNotifications() }, modifier = Modifier.fillMaxWidth()) {
                     Text("Export Notifications to JSON")

@@ -11,6 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Adding the specific Google Maven repository URL for beta/specialized libraries
+        maven { url = uri("https://maven.google.com/") }
     }
 }
 

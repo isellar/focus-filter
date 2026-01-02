@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
  */
 @Database(
     entities = [NotificationEntity::class],
-    version = 2, // Incremented version from 1 to 2
+    version = 3, // Incremented version from 2 to 3
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

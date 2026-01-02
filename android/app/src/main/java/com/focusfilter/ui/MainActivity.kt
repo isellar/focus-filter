@@ -17,15 +17,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -38,6 +37,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    // ... (onCreate remains the same)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
+    // ... (Main screen logic remains the same)
     val context = LocalContext.current
     val notifications by viewModel.notifications.collectAsState()
     val isPassthroughEnabled by viewModel.isPassthroughEnabled.collectAsState()
@@ -71,7 +72,6 @@ fun MainScreen(viewModel: MainViewModel) {
 
     LaunchedEffect(Unit) {
         hasNotificationAccess = isNotificationServiceEnabled(context)
-        // Request permissions if not granted
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -118,6 +118,101 @@ fun MainScreen(viewModel: MainViewModel) {
     }
 }
 
+
+@Composable
+private fun NotificationHistoryItem(
+    notification: NotificationEntity,
+    onUpdateCategory: (NotificationCategory) -> Unit,
+    onUpdateActionable: (Boolean) -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Header
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (notification.isSystemNotification) {
+                    Icon(Icons.Default.Android, contentDescription = "System Notification", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                Text(notification.appName, style = MaterialTheme.typography.labelMedium)
+            }
+            
+            // Content
+            Text(notification.title, fontWeight = FontWeight.Bold)
+            if (notification.body.isNotEmpty()) {
+                Text(notification.body, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            // AI Reasoning
+            if (notification.reasoning != null) {
+                Text(
+                    "\"${notification.reasoning}\"",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontStyle = FontStyle.Italic
+                )
+            }
+
+            // Controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Manual Classification Icons
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    NotificationCategory.values().forEach { category ->
+                        CategoryIconButton(
+                            category = category,
+                            isSelected = notification.userClassification == category.name,
+                            isSuggested = notification.aiClassification == category.name && notification.userClassification == null,
+                            onClick = onUpdateCategory,
+                            isEnabled = !notification.isSystemNotification
+                        )
+                    }
+                }
+                // Actionable Toggle
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Actionable", style = MaterialTheme.typography.labelSmall)
+                    Checkbox(
+                        checked = notification.isActionable,
+                        onCheckedChange = { onUpdateActionable(it) },
+                        enabled = !notification.isSystemNotification
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryIconButton(
+    category: NotificationCategory,
+    isSelected: Boolean,
+    isSuggested: Boolean,
+    isEnabled: Boolean,
+    onClick: (NotificationCategory) -> Unit
+) {
+    val icon = when (category) {
+        NotificationCategory.URGENT -> Icons.Default.KeyboardDoubleArrowUp
+        NotificationCategory.INFORMATIONAL -> Icons.Default.ArrowUpward
+        NotificationCategory.BACKGROUND -> Icons.Default.ArrowDownward
+        NotificationCategory.IRRELEVANT -> Icons.Default.Block
+    }
+    val colors = IconButtonDefaults.iconToggleButtonColors(
+        checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        containerColor = if (isSuggested) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+    )
+    IconToggleButton(
+        checked = isSelected,
+        onCheckedChange = { onClick(category) },
+        enabled = isEnabled,
+        colors = colors
+    ) {
+        Icon(imageVector = icon, contentDescription = category.name)
+    }
+}
+
+
+// ... (Other Composables and functions remain the same)
 @Composable
 private fun ServiceStatusCard(isPassthroughEnabled: Boolean, onToggle: (Boolean) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -133,80 +228,6 @@ private fun ServiceStatusCard(isPassthroughEnabled: Boolean, onToggle: (Boolean)
             }
             Switch(checked = !isPassthroughEnabled, onCheckedChange = { onToggle(!it) })
         }
-    }
-}
-
-@Composable
-private fun NotificationHistoryItem(
-    notification: NotificationEntity,
-    onUpdateCategory: (NotificationCategory) -> Unit,
-    onUpdateActionable: (Boolean) -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(notification.appName, style = MaterialTheme.typography.labelMedium)
-            Text(notification.title, fontWeight = FontWeight.Bold)
-            if (notification.body.isNotEmpty()) {
-                Text(notification.body, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Manual Classification Icons
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    CategoryIconButton(
-                        category = NotificationCategory.URGENT,
-                        isSelected = notification.userClassification == NotificationCategory.URGENT.name,
-                        onClick = onUpdateCategory
-                    )
-                    CategoryIconButton(
-                        category = NotificationCategory.INFORMATIONAL,
-                        isSelected = notification.userClassification == NotificationCategory.INFORMATIONAL.name,
-                        onClick = onUpdateCategory
-                    )
-                    CategoryIconButton(
-                        category = NotificationCategory.BACKGROUND,
-                        isSelected = notification.userClassification == NotificationCategory.BACKGROUND.name,
-                        onClick = onUpdateCategory
-                    )
-                    CategoryIconButton(
-                        category = NotificationCategory.IRRELEVANT,
-                        isSelected = notification.userClassification == NotificationCategory.IRRELEVANT.name,
-                        onClick = onUpdateCategory
-                    )
-                }
-                // Actionable Toggle
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Actionable", style = MaterialTheme.typography.labelSmall)
-                    Spacer(Modifier.width(4.dp))
-                    Checkbox(checked = notification.isActionable, onCheckedChange = { onUpdateActionable(it) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryIconButton(
-    category: NotificationCategory,
-    isSelected: Boolean,
-    onClick: (NotificationCategory) -> Unit
-) {
-    val icon = when (category) {
-        NotificationCategory.URGENT -> Icons.Default.KeyboardDoubleArrowUp
-        NotificationCategory.INFORMATIONAL -> Icons.Default.ArrowUpward
-        NotificationCategory.BACKGROUND -> Icons.Default.ArrowDownward
-        NotificationCategory.IRRELEVANT -> Icons.Default.Block
-    }
-    IconToggleButton(
-        checked = isSelected,
-        onCheckedChange = { onClick(category) }
-    ) {
-        Icon(imageVector = icon, contentDescription = category.name)
     }
 }
 

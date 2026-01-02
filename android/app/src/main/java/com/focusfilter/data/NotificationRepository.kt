@@ -22,7 +22,8 @@ class NotificationRepository @Inject constructor(
      */
     suspend fun insertNotification(
         notification: Notification,
-        classification: ClassificationResult
+        classification: ClassificationResult,
+        isSystemNotification: Boolean
     ) {
         val entity = NotificationEntity(
             title = notification.title,
@@ -31,7 +32,8 @@ class NotificationRepository @Inject constructor(
             packageName = notification.packageName,
             timestamp = notification.timestamp,
             aiClassification = classification.category.name,
-            reasoning = classification.reasoning
+            reasoning = classification.reasoning,
+            isSystemNotification = isSystemNotification
         )
         notificationDao.insert(entity)
     }

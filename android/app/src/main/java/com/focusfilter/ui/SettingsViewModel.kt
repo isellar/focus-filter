@@ -21,13 +21,8 @@ class SettingsViewModel @Inject constructor(
     private val _exportResult = MutableStateFlow<String?>(null)
     val exportResult: StateFlow<String?> = _exportResult.asStateFlow()
 
-    val passthroughEnabled: StateFlow<Boolean> = settingsRepository.passthroughEnabled
     val apiEndpoint: StateFlow<String> = settingsRepository.apiEndpoint
     val themeSetting: StateFlow<ThemeSetting> = settingsRepository.themeSetting
-
-    fun setPassthroughEnabled(isEnabled: Boolean) {
-        settingsRepository.setPassthroughEnabled(isEnabled)
-    }
 
     fun setApiEndpoint(endpoint: String) {
         settingsRepository.setApiEndpoint(endpoint)

@@ -87,9 +87,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-    // AICore (Gemini Nano)
-    implementation("com.google.ai.client.generativeai:generativeai:0.2.2")
-
     // AppSearch
     implementation("androidx.appsearch:appsearch:1.1.0-alpha05")
     implementation("androidx.appsearch:appsearch-local-storage:1.1.0-alpha05")

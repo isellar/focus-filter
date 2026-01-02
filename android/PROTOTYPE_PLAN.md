@@ -1,6 +1,6 @@
 # Focus Filter - Complete Prototype Plan
 
-**Last Updated**: 2025-12-30
+**Last Updated**: 2025-12-31
 **Status**: Backend Complete ✅ | Android In Progress 🚧
 
 ---
@@ -18,20 +18,21 @@ _(No changes)_
 
 #### Tasks
 
-5. **Storage Setup**
-   - [x] Set up Room as a fallback/initial storage solution
-   - [x] Create `NotificationRepository` pattern
-   - [ ] **NEW:** Add a `userClassification` field to `NotificationEntity` to store manual categorization.
-   - [ ] **NEW:** Add an `isActionable` boolean field to `NotificationEntity` to track if a notification contains a potential action.
-   - [ ] Set up AppSearch for primary storage with vector embeddings
+2.  **NotificationListenerService**
+    *   [x] Create `FocusFilterNotificationService`
+    *   [x] Request notification access permission via UI
+    *   [x] Implement `onNotificationPosted()` to extract base data
+    *   [x] Cancel original notification (Toggleable via Passthrough Mode)
+    *   [ ] Resolve user-facing application name and icon from package name.
+    *   [ ] **NEW:** Identify system notifications (e.g., using `Notification.FLAG_ONGOING_EVENT` or checking the package name for `android`) and store this status.
 
-6. **Basic UI**
-   - [x] Create `MainActivity` and `SettingsActivity`
-   - [x] Implement UI for notification access and permission status
-   - [x] Display list of stored notifications from Room
-   - [x] Add "Passthrough Mode" toggle and "Export Data" feature
-   - [x] Add Dark/Light/System theme selection
-   - [ ] **NEW:** Update notification history items to display the resolved app name (and eventually icon).
+5.  **Storage Setup**
+    *   [x] Set up Room as a fallback/initial storage solution
+    *   [x] Create `NotificationRepository` pattern
+    *   [ ] Add a `userClassification` field to `NotificationEntity` to store manual categorization.
+    *   [ ] Add an `isActionable` boolean field to `NotificationEntity`.
+    *   [ ] **NEW:** Add an `isSystemNotification` boolean field to `NotificationEntity`.
+    *   [ ] Set up AppSearch for primary storage with vector embeddings
 
 ---
 
@@ -41,28 +42,23 @@ _(No changes)_
 
 #### Tasks
 
-1. **Notification History Screen**
-   - [ ] Enhance the notification list in `MainActivity`.
-   - [ ] **NEW:** Add UI controls (e.g., buttons, chips) to each notification item to allow manual categorization into **Urgent, Informational, Background, or Irrelevant**.
-   - [ ] **NEW:** Add a UI control (e.g., checkbox, switch) to each notification item to manually mark it as **actionable**.
-   - [ ] The selected category and actionable status should be saved back to the database.
+1.  **Notification History Screen**
+    *   [ ] Enhance the notification list in `MainActivity`.
+    *   [ ] Add UI controls for manual categorization (Urgent, Informational, etc.).
+    *   [ ] Add a UI control to manually mark a notification as actionable.
+    *   [ ] **NEW:** Update the UI for notification history items. If a notification is marked as a system notification, the manual classification and actionability controls should be disabled and visually grayed out.
 
 ---
 
 ## Implementation Details
 
-### Classification Categories
+### **NEW: System Notification Handling**
 
-The classification system uses a four-tier model:
+To ensure the app is safe and reliable, system-critical notifications will be handled with special care:
 
-- **Urgent**: An immediate and important notification. The agent should surface this to the user right away.
-- **Informational**: A notification that is useful but not time-sensitive. The agent should surface this at the next opportune moment.
-- **Background**: A notification that should be recorded for long-term memory or pattern detection but does not need to be surfaced to the user directly.
-- **Irrelevant**: A notification that can be safely discarded and does not need to be stored.
-
-### **NEW: Actionability**
-
-- A notification is considered **actionable** if it contains information that could be used to perform a task (e.g., creating a calendar event, setting a reminder, navigating to a location).
-- This will be tracked as a boolean flag in the database and will be a key feature for the agent's future decision-making.
+*   **Detection:** The `NotificationListenerService` will check for flags like `Notification.FLAG_ONGOING_EVENT` or if the notification originates from a core system package (e.g., `android`, `com.android.systemui`).
+*   **Automatic Classification:** Any notification flagged as a system notification will be automatically treated as **Urgent** by the reasoning engine, bypassing any complex AI analysis.
+*   **No Suppression:** System notifications will never be suppressed or delayed. In Passthrough Mode they appear normally, and in Filtering Mode they will be immediately re-posted as Urgent.
+*   **User Interface:** The manual categorization controls in the UI will be disabled for these items to prevent accidental mislabeling in the dataset.
 
 _(The rest of this document remains largely unchanged)_

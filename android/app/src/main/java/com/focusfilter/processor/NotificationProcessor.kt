@@ -1,20 +1,15 @@
 package com.focusfilter.processor
 
 import android.util.Log
+import com.focusfilter.action.ActionExecutor
+import com.focusfilter.context.ContextProvider
+import com.focusfilter.models.ClassificationResult
 import com.focusfilter.models.Notification
 import com.focusfilter.models.NotificationCategory
-import com.focusfilter.context.ContextProvider
 import com.focusfilter.reasoning.ReasoningEngine
-import com.focusfilter.action.ActionExecutor
 import dagger.hilt.android.scopes.ServiceScoped
 import javax.inject.Inject
 
-/**
- * Processes notifications through the agentic loop:
- * 1. Gather context
- * 2. Classify notification
- * 3. Execute action based on classification
- */
 @ServiceScoped
 class NotificationProcessor @Inject constructor(
     private val contextProvider: ContextProvider,
@@ -23,27 +18,32 @@ class NotificationProcessor @Inject constructor(
 ) {
     private val tag = "NotificationProcessor"
 
-    /**
-     * Processes a notification through the full agentic pipeline.
-     */
-    suspend fun processNotification(notification: Notification) {
+    suspend fun processNotification(notification: Notification, isSystemNotification: Boolean) {
         try {
             Log.d(tag, "Processing notification: ${notification.title}")
 
-            // Step 1: Gather context
-            val context = contextProvider.getCurrentContext()
-            Log.d(tag, "Context: ${context.toPromptString()}")
+            // If it's a system notification, automatically classify as Urgent
+            val classification = if (isSystemNotification) {
+                Log.d(tag, "System notification detected, classifying as URGENT.")
+                ClassificationResult(
+                    notificationId = notification.id,
+                    category = NotificationCategory.URGENT,
+                    confidence = 1.0f,
+                    reasoning = "System-level notification."
+                )
+            } else {
+                val context = contextProvider.getCurrentContext()
+                reasoningEngine.classify(notification, context)
+            }
 
-            // Step 2: Classify notification
-            val classification = reasoningEngine.classify(notification, context)
             Log.d(tag, "Classification: ${classification.category} (confidence: ${classification.confidence})")
 
-            // Step 3: Execute action based on classification
+            // Execute action based on classification
             when (classification.category) {
-                NotificationCategory.URGENT -> actionExecutor.executeUrgent(notification, classification)
-                NotificationCategory.INFORMATIONAL -> actionExecutor.executeInformational(notification, classification)
-                NotificationCategory.BACKGROUND -> actionExecutor.executeBackground(notification, classification)
-                NotificationCategory.IRRELEVANT -> actionExecutor.executeIrrelevant(notification, classification)
+                NotificationCategory.URGENT -> actionExecutor.executeUrgent(notification, classification, isSystemNotification)
+                NotificationCategory.INFORMATIONAL -> actionExecutor.executeInformational(notification, classification, isSystemNotification)
+                NotificationCategory.BACKGROUND -> actionExecutor.executeBackground(notification, classification, isSystemNotification)
+                NotificationCategory.IRRELEVANT -> actionExecutor.executeIrrelevant(notification, classification, isSystemNotification)
             }
 
             Log.d(tag, "Notification processed successfully")
@@ -52,12 +52,13 @@ class NotificationProcessor @Inject constructor(
             // Fallback: treat as background
             actionExecutor.executeBackground(
                 notification,
-                com.focusfilter.models.ClassificationResult(
+                ClassificationResult(
                     notificationId = notification.id,
                     category = NotificationCategory.BACKGROUND,
                     confidence = 0.5f,
                     reasoning = "Error: ${e.message}"
-                )
+                ),
+                isSystemNotification // Pass the flag in case of error
             )
         }
     }

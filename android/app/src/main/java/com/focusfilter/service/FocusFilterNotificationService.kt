@@ -1,5 +1,6 @@
 package com.focusfilter.service
 
+import android.app.Notification as AndroidNotification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -14,10 +15,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Service that intercepts all notifications.
- * Extends NotificationListenerService to receive notification events.
- */
 @AndroidEntryPoint
 class FocusFilterNotificationService : NotificationListenerService() {
 
@@ -29,84 +26,53 @@ class FocusFilterNotificationService : NotificationListenerService() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(tag, "Notification service created")
-    }
-
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        Log.d(tag, "Notification listener connected")
-    }
-
-    override fun onListenerDisconnected() {
-        super.onListenerDisconnected()
-        Log.d(tag, "Notification listener disconnected")
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
-        
-        if (sbn == null) {
-            Log.w(tag, "Received null notification")
-            return
-        }
+        if (sbn == null) return
 
-        // Extract notification data
+        val isSystemNotification = (sbn.notification.flags and AndroidNotification.FLAG_ONGOING_EVENT != 0) ||
+                                   sbn.packageName == "android" ||
+                                   sbn.packageName.startsWith("com.android.systemui")
+
         val notification = extractNotification(sbn)
-        
         Log.d(tag, "Notification intercepted: ${notification.title} from ${notification.appName}")
 
-        // Process notification asynchronously
         serviceScope.launch {
-            // Check if passthrough is enabled. If so, do not cancel the original notification.
             val isPassthroughEnabled = settingsRepository.passthroughEnabled.first()
-            if (!isPassthroughEnabled) {
+
+            // Never cancel system notifications. Only cancel others if passthrough is disabled.
+            if (!isPassthroughEnabled && !isSystemNotification) {
                 cancelNotification(sbn.key)
             } else {
-                Log.d(tag, "Passthrough enabled, not cancelling original notification.")
+                Log.d(tag, "Not cancelling notification. Passthrough: $isPassthroughEnabled, System: $isSystemNotification")
             }
 
             try {
-                notificationProcessor.processNotification(notification)
+                notificationProcessor.processNotification(notification, isSystemNotification)
             } catch (e: Exception) {
                 Log.e(tag, "Error processing notification", e)
             }
         }
     }
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        super.onNotificationRemoved(sbn)
-        // Handle notification removal if needed
-    }
-
-    /**
-     * Extracts notification data from StatusBarNotification.
-     */
     private fun extractNotification(sbn: StatusBarNotification): Notification {
-        val androidNotification = sbn.notification
-        val extras = androidNotification.extras
+        val extras = sbn.notification.extras
+        val title = extras.getCharSequence(AndroidNotification.EXTRA_TITLE)?.toString() ?: ""
+        val body = extras.getCharSequence(AndroidNotification.EXTRA_TEXT)?.toString() ?: ""
+        val appName = sbn.packageName // Placeholder
 
-        val title = extras?.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString() ?: ""
-        val body = extras?.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString() ?: ""
-        val appName = sbn.packageName // Will be replaced with actual app name lookup
-        val packageName = sbn.packageName
-        val timestamp = sbn.postTime
-
-        // Extract additional metadata
         val notificationExtras = mutableMapOf<String, String>()
-        extras?.keySet()?.forEach { key ->
-            extras.get(key)?.toString()?.let { value ->
-                notificationExtras[key] = value
-            }
+        extras.keySet()?.forEach { key ->
+            extras.get(key)?.toString()?.let { value -> notificationExtras[key] = value }
         }
 
         return Notification(
+            id = sbn.key,
             title = title,
             body = body,
             appName = appName,
-            packageName = packageName,
-            timestamp = timestamp,
+            packageName = sbn.packageName,
+            timestamp = sbn.postTime,
             extras = notificationExtras
         )
     }

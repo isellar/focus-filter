@@ -16,5 +16,6 @@ data class NotificationEntity(
     val aiClassification: String,
     val reasoning: String? = null,
     var userClassification: String? = null,
-    var isActionable: Boolean = false
+    var isActionable: Boolean = false,
+    var isSystemNotification: Boolean = false
 )
